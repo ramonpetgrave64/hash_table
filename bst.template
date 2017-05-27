@@ -1,0 +1,260 @@
+//
+// Created by Ramon Petgrave on 5/20/17.
+//
+
+#include <iomanip>
+#include <cassert>
+#include "bst.h"
+
+using std::cout;
+using std::endl;
+using std::ostream;
+using std::setw;
+
+namespace ramon_petgrave_hashtable {
+    ///tree_node
+    template<class Item>
+    tree_node<Item>::tree_node(int key, const Item &value, tree_node <Item> *up_ptr) {
+        this->key = key;
+        this->value = value;
+        up_node = up_ptr;
+        right_node = NULL;
+        left_node = NULL;
+    }
+
+    template<class Item>
+    int tree_node<Item>::get_key() const {
+        return key;
+    }
+
+    template<class Item>
+    Item &tree_node<Item>::get_value() {
+        return value;
+    }
+
+    template<class Item>
+    void tree_node<Item>::add(int key, const Item &value) {
+        if (key < this->key) {
+            if (left_node == NULL) {
+                left_node = new tree_node(key, value, this);
+            } else {
+                left_node->add(key, value);
+            }
+        } else {
+            if (right_node == NULL) {
+                right_node = new tree_node(key, value, this);
+            } else {
+                right_node->add(key, value);
+            }
+        }
+    }
+
+    template<class Item>
+    Item &tree_node<Item>::value_at(int key) {
+        if (key == this->key) {
+            return value;
+        } else if (key < this->key && left_node != NULL) {
+            return left_node->value_at(key);
+        } else {
+            return right_node->value_at(key);
+        }
+    }
+
+    template<class Item>
+    bool tree_node<Item>::has_key(int key) const {
+        bool left_has = false;
+        bool right_has = false;
+        if (key == this->key) {
+            return true;
+        } else {
+            if (key < this->key && left_node != NULL) {
+                left_has = left_node->has_key(key);
+            } else if (key > this->key && right_node != NULL) {
+                right_has = right_node->has_key(key);
+            }
+            return (left_has || right_has);
+        }
+    }
+
+    template<class Item>
+    tree_node <Item> &tree_node<Item>::node_at(int key) {
+        if (this->key == key) {
+            return *this;
+        } else {
+            tree_node *target;
+            if (key < this->key && left_node != NULL) {
+                target = &left_node->node_at(key);
+            } else if (key > this->key && right_node != NULL) {
+                target = &right_node->node_at(key);
+            }
+            return *target;
+        }
+    }
+
+    template<class Item>
+    void tree_node<Item>::remove_self() {
+        if (right_node == NULL && left_node == NULL) {
+            //this must not be the root node
+            tree_node *self = this;
+            if (this->key < up_node->key) {
+                up_node->left_node = NULL;
+            } else {
+                up_node->right_node = NULL;
+            }
+            delete self;
+        } else if (right_node != NULL && left_node != NULL) {
+            tree_node *self = this;
+            tree_node *rep = &right_node->leftmost();
+            tree_node *rep_parent = rep->up_node;
+            tree_node *rep_child = rep->right_node;
+            if(rep_child != NULL) {
+                rep_child->up_node = rep_parent;
+            }
+            if(rep_parent == this) {
+                right_node = rep_child;
+            } else {
+                rep_parent->left_node = rep_child;
+            }
+            self->key = rep->key;
+            self->value = rep->value;
+            delete rep;
+        } else {
+            tree_node *child;
+            if (right_node != NULL) {
+                child = right_node;
+            } else {
+                child = left_node;
+            }
+            key = child->key;
+            value = child->value;
+            left_node = child->left_node;
+            if (left_node != NULL) {
+                left_node->up_node = this;
+            }
+            right_node = child->right_node;
+            if (right_node != NULL) {
+                right_node->up_node = this;
+            }
+            delete child;
+        }
+    }
+
+    template<class Item>
+    void tree_node<Item>::remove(int key) {
+        node_at(key).remove_self();
+    }
+
+    template<class Item>
+    tree_node <Item> &tree_node<Item>::leftmost() {
+        if (left_node == NULL) {
+            return *this;
+        } else {
+            return left_node->leftmost();
+        }
+    }
+
+    template<class Item>
+    tree_node <Item> &tree_node<Item>::rightmost() {
+        if (right_node == NULL) {
+            return *this;
+        } else {
+            return right_node->rightmost();
+        }
+    }
+
+    template<class Item>
+    void tree_node<Item>::tree_stream(ostream &os) {
+        os << *this;
+        if (left_node != NULL) {
+            left_node->tree_stream(os);
+        }
+        if (right_node != NULL) {
+            right_node->tree_stream(os);
+        }
+    }
+
+    template<class Item>
+    void tree_node<Item>::print_tree_view(size_t level) const {
+        if (right_node != NULL) {
+            right_node->print_tree_view(level + 1);
+        }
+        cout << setw(level * 4);
+        cout << "(" << key << "," << value << ")" << endl;
+        if (left_node != NULL) {
+            left_node->print_tree_view(level + 1);
+        }
+    }
+
+    ///bst
+    template<class Item>
+    bst<Item>::bst() {
+        root = NULL;
+        tree_size = 0;
+    }
+
+    template<class Item>
+    bst<Item>::~bst() {
+        while (tree_size > 0) {
+            remove(top_key());
+        }
+        delete root;
+    }
+
+    template<class Item>
+    size_t bst<Item>::size() {
+        return tree_size;
+    }
+
+    template<class Item>
+    void bst<Item>::put(int key, Item value) {
+        if (root == NULL) {
+            root = new tree_node<Item>(key, value, NULL);
+        } else {
+            root->add(key, value);
+        }
+        tree_size++;
+    }
+
+    template<class Item>
+    Item &bst<Item>::get(int key) {
+        assert(tree_size > 0);
+        assert(root->has_key(key));
+        return root->value_at(key);
+    }
+
+    template<class Item>
+    void bst<Item>::remove(int key) {
+        assert(tree_size > 0);
+        assert(root->has_key(key));
+        if (root->get_key() == key && tree_size == 1) {
+            delete root;
+            root = NULL;
+        } else {
+            root->remove(key);
+        }
+        tree_size--;
+    }
+
+    template<class Item>
+    tree_node <Item> &bst<Item>::leftmost() {
+        return root->leftmost();
+    }
+
+    template<class Item>
+    tree_node <Item> &bst<Item>::rightmost() {
+        return root->rightmost();
+    }
+
+    template<class Item>
+    void bst<Item>::print_tree_view() {
+        if (root != NULL) {
+            root->print_tree_view(0);
+        }
+    }
+
+    template<class Item>
+    int bst<Item>::top_key() {
+        assert(tree_size > 0);
+        return root->get_key();
+    }
+}

@@ -1,0 +1,130 @@
+//
+// Created by Ramon Petgrave on 5/21/17.
+//
+
+#include "linked_list.h"
+#include <cassert>
+
+using std::cout;
+using std::endl;
+
+namespace ramon_petgrave_hashtable {
+    ///node
+    template<class Item>
+    node<Item>::node(int key, const Item &value, node<Item> *prev) {
+        this->key = key;
+        this->data = value;
+        this->prev = prev;
+        this->next = NULL;
+    }
+    template<class Item>
+    bool node<Item>::has(int key) {
+        if (this->key == key) {
+            return true;
+        } else if (next != NULL) {
+            return next->has(key);
+        } else {
+            return false;
+        }
+    }
+    template<class Item>
+    Item& node<Item>::value_at(int key) {
+        if (this->key == key) {
+            return data;
+        } else {
+            return next->value_at(key);
+        }
+    }
+    template<class Item>
+    void node<Item>::add(int key, const Item &value) {
+        if(next == NULL) {
+            next = new node<Item>(key, value, this);
+        } else {
+            next->add(key, value);
+        }
+    }
+    template<class Item>
+    void node<Item>::remove_self() {
+        assert(prev != NULL);
+        node* a = prev;
+        node* b = next;
+        a->next = b;
+        if(b != NULL) {
+            b->prev = a;
+        }
+    }
+    template<class Item>
+    void node<Item>::remove_at(int key) {
+        //safe, since only called after has(key) is called on head.
+        if(this->key == key){
+            remove_self();
+        } else {
+            next->remove_at(key);
+        }
+    }
+    template<class Item>
+    int node<Item>::get_key() {
+        return key;
+    }
+    template<class Item>
+    node<Item>& node<Item>::get_next() {
+        return *next;
+    }
+
+    ///linked list
+    template<class Item>
+    linked_list<Item>::linked_list() {
+        used = 0;
+        head = NULL;
+    }
+    template<class Item>
+    linked_list<Item>::~linked_list() {
+        clear();
+    }
+    template<class Item>
+    size_t linked_list<Item>::size() {
+        return used;
+    }
+    template<class Item>
+    void linked_list<Item>::put(int key, const Item& value) {
+        if (used == 0){
+            head = new node<Item>(key, value, NULL);
+        } else {
+            head->add(key, value);
+        }
+        used++;
+    }
+    template<class Item>
+    Item& linked_list<Item>::get(int key) {
+        assert(used > 0);
+        return head->value_at(key);
+    }
+    template<class Item>
+    void linked_list<Item>::remove(int key) {
+        assert(used > 0);
+        assert(head->has(key));
+        if (used == 1) {
+            delete head;
+            head = NULL;
+        } else if (key == top_key()) {
+            node<Item>* temp = head;
+            head = &head->get_next();
+            head->prev = NULL;
+            delete temp;
+        } else {
+            head->remove_at(key);
+        }
+        used--;
+    }
+    template<class Item>
+    void linked_list<Item>::clear() {
+        while(used > 0) {
+            remove(head->get_key());
+        }
+    }
+    template<class Item>
+    int linked_list<Item>::top_key() {
+        assert(used > 0);
+        return head->get_key();
+    }
+}

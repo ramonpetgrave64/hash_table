@@ -1,0 +1,94 @@
+//
+// Created by Ramon Petgrave on 5/20/17.
+//
+
+#include "hashtable.h"
+#include <cassert>
+#include <strhash.h>
+
+using std::cout;
+using std::endl;
+
+namespace ramon_petgrave_hashtable {
+	template<class Item>
+	hashtable<Item>::hashtable(size_t size) {
+		assert(size > 0);
+		table_size = size;
+		buckets = new hash_bucket<Item>[size];
+		used_indexes = 0;
+		num_items = 0;
+	}
+
+	template<class Item>
+	hashtable<Item>::~hashtable() {
+		delete[] buckets;
+	}
+
+	template<class Item>
+	size_t hashtable<Item>::size() const {
+		return table_size;
+	}
+
+	template<class Item>
+	size_t hashtable<Item>::get_used_indexes() const {
+		return used_indexes;
+	}
+
+	template<class Item>
+	size_t hashtable<Item>::hash_value(int key) {
+		return key % table_size;
+	}
+
+	template<class Item>
+	void hashtable<Item>::put(int key, const Item &value) {
+		size_t index = hash_value(key);
+		buckets[index].put(key, value);
+		num_items++;
+		if(buckets[index].size() == 1) { //if we just added the buckets only item
+			used_indexes++;
+		}
+		if(num_items/table_size > rehash__threshold) {
+			rehash();
+		}
+	}
+
+	template<class Item>
+	Item &hashtable<Item>::get(int key) {
+		size_t index = hash_value(key);
+		return buckets[index].get(key);
+	}
+
+	template<class Item>
+	void hashtable<Item>::remove(int key) {
+		size_t index = hash_value(key);
+		buckets[index].remove(key);
+		num_items--;
+		if(buckets[index].size() == 0) { //if we just removed the buckets only item
+			used_indexes--;
+		}
+	}
+
+	template<class Item>
+	void hashtable<Item>::rehash() {
+		hash_bucket<Item>* old_buckets = buckets;
+		size_t old_size = table_size;
+		size_t old_u_i = used_indexes;
+
+		table_size *= 2;
+		buckets = new hash_bucket<Item>[table_size];
+		used_indexes = 0;
+		num_items = 0;
+
+		int key;
+		Item* item;
+		for(size_t i = 0;(used_indexes < old_u_i) && (i < old_size); i++) {
+			while(old_buckets[i].size() > 0) {
+				key = old_buckets[i].top_key();
+				item = &old_buckets[i].get(key);
+				put(key, *item);
+				old_buckets[i].remove(key);
+			}
+		}
+		delete[] old_buckets;
+	}
+}

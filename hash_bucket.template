@@ -1,0 +1,104 @@
+//
+// Created by Ramon Petgrave on 5/21/17.
+//
+
+#include "hash_bucket.h"
+
+namespace ramon_petgrave_hashtable {
+    template<class Item>
+    hash_bucket<Item>::hash_bucket() {
+        list = new linked_list<Item>;
+        tree = NULL;
+    }
+    template<class Item>
+    hash_bucket<Item>::hash_bucket(int key, const Item& data) {
+        list = new linked_list<Item>;
+        list->put(key, data);
+        tree = NULL;
+    }
+    template<class Item>
+    hash_bucket<Item>::~hash_bucket() {
+        if(list != NULL) {
+            delete list;
+        }
+        if (tree != NULL){
+            delete tree;
+        }
+    }
+    template<class Item>
+    size_t hash_bucket<Item>::size() {
+        if (list != NULL) {
+            return list->size();
+        } else {
+            return tree->size();
+        }
+    }
+    template<class Item>
+    void hash_bucket<Item>::put(int key, const Item& value) {
+        if (list != NULL) {
+            list->put(key, value);
+        } else {
+            tree->put(key, value);
+        }
+       if((size() == upper_limit) && (list != NULL)) {
+            switch_to_bst();
+        }
+    }
+    template<class Item>
+    Item& hash_bucket<Item>::get(int key) {
+        if (list != NULL) {
+            return list->get(key);
+        } else {
+            return tree->get(key);
+        }
+    }
+    template<class Item>
+    void hash_bucket<Item>::remove(int key) {
+        if (list != NULL) {
+            list->remove(key);
+        } else {
+            tree->remove(key);
+        }
+        if ((size() == lower_limit) && (list == NULL)) {
+            switch_to_ll();
+        }
+    }
+    template<class Item>
+    void hash_bucket<Item>::switch_to_bst() {
+        bst<Item>* target_tree = new bst<Item>;
+        int key;
+        Item* item;
+        while(list->size() > 0) {
+            key = list->top_key();
+            item = &list->get(key);
+            (*target_tree).put(key, *item);
+            list->remove(key);
+        }
+        delete list;
+        list = NULL;
+        tree = target_tree;
+    }
+    template<class Item>
+    void hash_bucket<Item>::switch_to_ll() {
+        linked_list<Item>* target_list = new linked_list<Item>;
+        int key;
+        Item* item;
+        while(tree->size() > 0) {
+            key = tree->top_key();
+            item = &(tree->get(key));
+            (*target_list).put(key, *item);
+            tree->remove(key);
+        }
+        delete tree;
+        tree = NULL;
+        list = target_list;
+    }
+    template<class Item>
+    int hash_bucket<Item>::top_key() {
+        if (list != NULL) {
+            return list->top_key();
+        } else {
+            return tree->top_key();
+        }
+    }
+}
