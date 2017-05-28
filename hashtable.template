@@ -3,8 +3,6 @@
 //
 
 #include "hashtable.h"
-#include <cassert>
-#include <strhash.h>
 
 using std::cout;
 using std::endl;
@@ -26,7 +24,7 @@ namespace ramon_petgrave_hashtable {
 
 	template<class Item>
 	size_t hashtable<Item>::size() const {
-		return table_size;
+		return used_indexes;
 	}
 
 	template<class Item>

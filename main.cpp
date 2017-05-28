@@ -1,13 +1,13 @@
 #include <iostream>
-#include <cmath>
 #include "hashtable.h"
+#include "hash_container.h"
 
 using namespace std;
 
 using namespace ramon_petgrave_hashtable;
 
 int main() {
-    srand(time(0));
+    /*srand(time(0));
 
     bool b = true;
     while(b) {
@@ -19,6 +19,9 @@ int main() {
             t.put(key, value);
         }
         //cout << t << endl;
-    }
+    }*/
+
+    //hash_container<int> c;
+
     return 0;
 }
