@@ -12,24 +12,20 @@ namespace ramon_petgrave_hashtable {
 	hashtable<Item>::hashtable(size_t size) {
 		assert(size > 0);
 		table_size = size;
-		buckets = new hash_bucket<Item>[size];
+		buckets = new hash_bucket<Item>*[size];
+        for(size_t i = 0; i < table_size; i++) {
+            buckets[i] = NULL;
+        }
 		used_indexes = 0;
-		num_items = 0;
 	}
 
 	template<class Item>
 	hashtable<Item>::~hashtable() {
-		delete[] buckets;
-	}
-
-	template<class Item>
-	size_t hashtable<Item>::size() const {
-		return used_indexes;
-	}
-
-	template<class Item>
-	size_t hashtable<Item>::get_used_indexes() const {
-		return used_indexes;
+        size_t count = 0;
+	    for(size_t i = 0; (count < used_indexes) && (i < table_size); i++) {
+            delete buckets[i];
+        }
+        delete[] buckets;
 	}
 
 	template<class Item>
@@ -40,12 +36,13 @@ namespace ramon_petgrave_hashtable {
 	template<class Item>
 	void hashtable<Item>::put(int key, const Item &value) {
 		size_t index = hash_value(key);
-		buckets[index].put(key, value);
-		num_items++;
-		if(buckets[index].size() == 1) { //if we just added the buckets only item
-			used_indexes++;
-		}
-		if(num_items/table_size > rehash__threshold) {
+        if(buckets[index] == NULL) {
+            buckets[index] = new hash_bucket<Item>;
+            used_indexes++;
+        }
+        buckets[index]->put(key, value);
+        this->num_items++;
+		if(this->num_items/table_size > rehash__threshold) {
 			rehash();
 		}
 	}
@@ -53,40 +50,77 @@ namespace ramon_petgrave_hashtable {
 	template<class Item>
 	Item &hashtable<Item>::get(int key) {
 		size_t index = hash_value(key);
-		return buckets[index].get(key);
+        assert(buckets[index] != NULL);
+		return buckets[index]->get(key);
 	}
+    template<class Item>
+    int hashtable<Item>::top_key() {
+        assert(used_indexes > 0);
+        for(size_t i = 0; i < table_size; i++) {
+            if(buckets[i] != NULL) {
+                return buckets[i]->top_key();
+            }
+        }
+        return 0;
+    }
 
 	template<class Item>
 	void hashtable<Item>::remove(int key) {
 		size_t index = hash_value(key);
-		buckets[index].remove(key);
-		num_items--;
-		if(buckets[index].size() == 0) { //if we just removed the buckets only item
-			used_indexes--;
-		}
+        assert(buckets[index] != NULL);
+        buckets[index]->remove(key);
+        if(buckets[index]->size() == 0) {
+            delete buckets[index];
+            buckets[index] = NULL;
+            used_indexes--;
+        }
+        this->num_items--;
 	}
 
 	template<class Item>
 	void hashtable<Item>::rehash() {
-		hash_bucket<Item>* old_buckets = buckets;
+		hash_bucket<Item>** old_buckets = buckets;
 		size_t old_size = table_size;
 		size_t old_u_i = used_indexes;
 
 		table_size *= 2;
-		buckets = new hash_bucket<Item>[table_size];
+		buckets = new hash_bucket<Item>*[table_size];
+        for(size_t i = 0; i < table_size; i++) {
+            buckets[i] = NULL;
+        }
 		used_indexes = 0;
-		num_items = 0;
+		this->num_items = 0;
 
 		int key;
 		Item* item;
 		for(size_t i = 0;(used_indexes < old_u_i) && (i < old_size); i++) {
-			while(old_buckets[i].size() > 0) {
-				key = old_buckets[i].top_key();
-				item = &old_buckets[i].get(key);
-				put(key, *item);
-				old_buckets[i].remove(key);
-			}
+            if(old_buckets[i] != NULL) {
+                while (old_buckets[i]->size() > 0) {
+                    key = old_buckets[i]->top_key();
+                    item = &old_buckets[i]->get(key);
+                    put(key, *item);
+                    old_buckets[i]->remove(key);
+                }
+                delete old_buckets[i];
+                old_buckets[i] = NULL;
+            }
 		}
 		delete[] old_buckets;
 	}
+    template<class Item>
+    void hashtable<Item>::print(std::ostream& os) {
+        os << "{HT: " << endl;
+        size_t count = 0;
+        for(size_t i = 0; (count < used_indexes) && (i<table_size); i++){
+            if(buckets[i] != NULL) {
+                count++;
+                os << i << ": " << *buckets[i];
+                if (count < used_indexes) {
+                    os << ",";
+                }
+                os << endl;
+            }
+        }
+        os << "}";
+    }
 }

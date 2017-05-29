@@ -6,6 +6,8 @@
 #define HASH_TABLE_BST_H
 
 #include <iostream>
+#include "hash_container.h"
+
 
 using std::ostream;
 using std::endl;
@@ -42,32 +44,22 @@ namespace ramon_petgrave_hashtable {
     ostream &operator<<(ostream &os, tree_node<Item> &node);
 
     template<class Item>
-    class bst {
+    class bst : public hash_container<Item>{
         private:
             tree_node<Item>* root;
-            size_t tree_size;
             tree_node<Item>& leftmost();
             tree_node<Item>& rightmost();
         public:
             bst();
             ~bst();
-            size_t size();
-            void put(int key, Item value);
+            //size_t size();
+            void put(int key, const Item& value);
             Item& get(int key);
             void remove(int key);
             void print_tree_view();
-            friend ostream &operator<<(ostream &os, bst<Item> &bst) {
-                os << "[BST: ";
-                if (bst.root !=  NULL) {
-                    bst.root->tree_stream(os);
-                }
-                os << "]";
-                return os;
-            };
             int top_key();
+            void print(std::ostream& os);
     };
-    template<class Item>
-    ostream &operator<<(ostream &os, bst<Item> &node);
 }
 #include "bst.template"
 #endif //HASH_TABLE_BST_H

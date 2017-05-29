@@ -11,14 +11,14 @@ using std::endl;
 namespace ramon_petgrave_hashtable {
     ///node
     template<class Item>
-    node<Item>::node(int key, const Item &value, node<Item> *prev) {
+    list_node<Item>::list_node(int key, const Item &value, list_node<Item> *prev) {
         this->key = key;
         this->data = value;
         this->prev = prev;
         this->next = NULL;
     }
     template<class Item>
-    bool node<Item>::has(int key) {
+    bool list_node<Item>::has(int key) {
         if (this->key == key) {
             return true;
         } else if (next != NULL) {
@@ -28,7 +28,7 @@ namespace ramon_petgrave_hashtable {
         }
     }
     template<class Item>
-    Item& node<Item>::value_at(int key) {
+    Item& list_node<Item>::value_at(int key) {
         if (this->key == key) {
             return data;
         } else {
@@ -36,25 +36,25 @@ namespace ramon_petgrave_hashtable {
         }
     }
     template<class Item>
-    void node<Item>::add(int key, const Item &value) {
+    void list_node<Item>::add(int key, const Item &value) {
         if(next == NULL) {
-            next = new node<Item>(key, value, this);
+            next = new list_node<Item>(key, value, this);
         } else {
             next->add(key, value);
         }
     }
     template<class Item>
-    void node<Item>::remove_self() {
+    void list_node<Item>::remove_self() {
         assert(prev != NULL);
-        node* a = prev;
-        node* b = next;
+        list_node* a = prev;
+        list_node* b = next;
         a->next = b;
         if(b != NULL) {
             b->prev = a;
         }
     }
     template<class Item>
-    void node<Item>::remove_at(int key) {
+    void list_node<Item>::remove_at(int key) {
         //safe, since only called after has(key) is called on head.
         if(this->key == key){
             remove_self();
@@ -63,18 +63,17 @@ namespace ramon_petgrave_hashtable {
         }
     }
     template<class Item>
-    int node<Item>::get_key() {
+    int list_node<Item>::get_key() {
         return key;
     }
     template<class Item>
-    node<Item>& node<Item>::get_next() {
+    list_node<Item>& list_node<Item>::get_next() {
         return *next;
     }
 
     ///linked list
     template<class Item>
     linked_list<Item>::linked_list() {
-        used = 0;
         head = NULL;
     }
     template<class Item>
@@ -82,49 +81,53 @@ namespace ramon_petgrave_hashtable {
         clear();
     }
     template<class Item>
-    size_t linked_list<Item>::size() {
-        return used;
-    }
-    template<class Item>
     void linked_list<Item>::put(int key, const Item& value) {
-        if (used == 0){
-            head = new node<Item>(key, value, NULL);
+        if (this->num_items == 0){
+            head = new list_node<Item>(key, value, NULL);
         } else {
             head->add(key, value);
         }
-        used++;
+        this->num_items++;
     }
     template<class Item>
     Item& linked_list<Item>::get(int key) {
-        assert(used > 0);
+        assert(this->num_items > 0);
         return head->value_at(key);
     }
     template<class Item>
     void linked_list<Item>::remove(int key) {
-        assert(used > 0);
+        assert(this->num_items > 0);
         assert(head->has(key));
-        if (used == 1) {
+        if (this->num_items == 1) {
             delete head;
             head = NULL;
         } else if (key == top_key()) {
-            node<Item>* temp = head;
+            list_node<Item>* temp = head;
             head = &head->get_next();
             head->prev = NULL;
             delete temp;
         } else {
             head->remove_at(key);
         }
-        used--;
+        this->num_items--;
     }
     template<class Item>
     void linked_list<Item>::clear() {
-        while(used > 0) {
+        while(this->num_items > 0) {
             remove(head->get_key());
         }
     }
     template<class Item>
     int linked_list<Item>::top_key() {
-        assert(used > 0);
+        assert(this->num_items > 0);
         return head->get_key();
+    }
+    template<class Item>
+    void linked_list<Item>::print(std::ostream &os) {
+        os << "[LL: ";
+        for (list_node<Item>* cursor = head; cursor != NULL; cursor = &cursor->get_next()) {
+            os << *cursor;
+        }
+        os << "]";
     }
 }
